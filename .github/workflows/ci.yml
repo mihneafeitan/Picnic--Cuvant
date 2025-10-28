@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    tags: [ 'v*' ]
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup CMake
+        uses: lukka/get-cmake@v4
+      - name: Configure
+        run: cmake -S . -B build
+      - name: Build
+        run: cmake --build build -- -j2
+      - name: Run (no network)
+        run: |
+          if [ -f big_romanian_list.txt ]; then
+            ./build/picnic || true
+          else
+            echo "big_romanian_list.txt missing - skipping run"
+          fi

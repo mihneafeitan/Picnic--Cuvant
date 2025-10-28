@@ -1,1 +1,5 @@
-ext/** linguist-vendored
+# Ensure source code files are treated as text and normalized (LF)
+*.cpp text eol=lf
+*.h   text eol=lf
+CMakeLists.txt text eol=lf
+*.txt text eol=lf
