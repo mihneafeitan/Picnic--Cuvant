@@ -6,15 +6,19 @@ on:
     tags: [ 'v*' ]
   pull_request:
 
+env:
+  SFML_VERSION: 3.0.2
+  BUILD_DIR: build
+  EXECUTABLE_NAME: picnic
+
 jobs:
   build:
-    name: Build and test on multiple systems
+    name: Build and test (${{ matrix.os }} ${{ matrix.compiler }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        build_type: [Release]
         compiler: [gcc, clang]
         exclude:
           - os: windows-latest
@@ -23,61 +27,63 @@ jobs:
             compiler: gcc
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install CMake
         uses: lukka/get-cmake@v4
 
-      - name: Create minimal word list
+      - name: Setup dependencies
+        run: |
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y libx11-dev libxrandr-dev libudev-dev libgl1-mesa-dev valgrind
+          elif [ "${{ runner.os }}" = "macOS" ]; then
+            brew install sfml
+          fi
+
+      - name: Create minimal dictionary
         run: |
           echo "ana\nmare\ncare\nram\nnor" > big_romanian_list.txt
 
       - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        run: cmake -S . -B $BUILD_DIR -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build
-        run: cmake --build build --config ${{ matrix.build_type }} -- -j2
+      - name: Build project
+        run: cmake --build $BUILD_DIR --config Release -- -j2
 
-      - name: Check executable
+      - name: Verify executable
         run: |
           echo "Listing build directory:"
-          ls build || dir build
-          if [ -f build/picnic ] || [ -f build/picnic.exe ] || [ -f build/PicnicCuvant ] || [ -f build/PicnicCuvant.exe ]; then
-            echo " Executabilul există."
+          ls $BUILD_DIR || dir $BUILD_DIR
+          if [ -f $BUILD_DIR/${EXECUTABLE_NAME} ] || [ -f $BUILD_DIR/${EXECUTABLE_NAME}.exe ]; then
+            echo " Executabil gasit: ${EXECUTABLE_NAME}"
           else
-            echo " Eroare: Executabilul lipsește!"
+            echo "Eroare: Executabilul lipseste!"
             exit 1
           fi
 
       - name: Run executable safely
         run: |
-          if [ -f build/picnic ]; then
-            ./build/picnic || true
-          elif [ -f build/PicnicCuvant ]; then
-            ./build/PicnicCuvant || true
+          if [ -f $BUILD_DIR/${EXECUTABLE_NAME} ]; then
+            ./$BUILD_DIR/${EXECUTABLE_NAME} || true
+          elif [ -f $BUILD_DIR/${EXECUTABLE_NAME}.exe ]; then
+            ./$BUILD_DIR/${EXECUTABLE_NAME}.exe || true
           else
-            echo " Executabilul nu a fost găsit. Skip run."
+            echo "⚠️ Skip run."
           fi
 
       - name: Run Cppcheck
-        run: |
-          cppcheck --enable=all --suppress=missingIncludeSystem . || true
+        run: cppcheck --enable=all --suppress=missingIncludeSystem . || true
 
       - name: Run Clang-Tidy
-        run: |
-          clang-tidy --version || echo "clang-tidy not available on this runner"
+        run: clang-tidy --version || true
 
       - name: Run Valgrind (Ubuntu only)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y valgrind
-          if [ -f build/picnic ]; then
-            valgrind --leak-check=full ./build/picnic || true
-          elif [ -f build/PicnicCuvant ]; then
-            valgrind --leak-check=full ./build/PicnicCuvant || true
-          else
-            echo " Valgrind skip: executabil lipsă."
+          if [ -f $BUILD_DIR/${EXECUTABLE_NAME} ]; then
+            valgrind --leak-check=full ./$BUILD_DIR/${EXECUTABLE_NAME} || true
           fi
 
       - name: Upload artifacts

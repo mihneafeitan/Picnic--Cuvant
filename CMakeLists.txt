@@ -102,3 +102,4 @@ copy_files(FILES tastatura.txt COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE
     src/Level.cpp
     src/WordList.cpp
 )
+set_target_properties(PicnicCuvant PROPERTIES OUTPUT_NAME "picnic")
