@@ -3,7 +3,3 @@
 *.h   text eol=lf
 CMakeLists.txt text eol=lf
 *.txt text eol=lf
-*.cmake linguist-detectable=false
-CMakeLists.txt linguist-detectable=false
-.github/** linguist-detectable=false
-*.yml linguist-detectable=false
