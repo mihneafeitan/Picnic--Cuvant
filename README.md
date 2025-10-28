@@ -1,6 +1,6 @@
-# Nu primesc notă pentru că nu am pus titlu și descriere
+# Picnic Cuvant
 
-### Folosiți template-ul corespunzător grupei voastre!
+### Joc de simplu de gandire, in care utilizatorul trebuie sa formeze cuvinte in limba romana, folosind literele disponibile la fiecare nivel.
 
 | Laborant  | Link template                                |
 |-----------|----------------------------------------------|
