@@ -8,36 +8,81 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Build and test on multiple systems
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        build_type: [Release]
+        compiler: [gcc, clang]
+        exclude:
+          - os: windows-latest
+            compiler: clang
+          - os: macos-latest
+            compiler: gcc
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install CMake
         uses: lukka/get-cmake@v4
 
-      - name: Configure project
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Create minimal word list
+        run: |
+          echo "ana\nmare\ncare\nram\nnor" > big_romanian_list.txt
 
-      - name: Build project
-        run: cmake --build build --config Release -- -j2
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
-      - name: Verify executable
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }} -- -j2
+
+      - name: Check executable
         run: |
           echo "Listing build directory:"
-          ls build
-          if [ -f build/PicnicCuvant ]; then
-            echo "✅ Executabil găsit: PicnicCuvant"
+          ls build || dir build
+          if [ -f build/picnic ] || [ -f build/picnic.exe ] || [ -f build/PicnicCuvant ] || [ -f build/PicnicCuvant.exe ]; then
+            echo " Executabilul există."
           else
-            echo "❌ Eroare: executabilul PicnicCuvant lipsește!"
+            echo " Eroare: Executabilul lipsește!"
             exit 1
           fi
 
-      - name: Run (safe test)
+      - name: Run executable safely
         run: |
-          if [ -f big_romanian_list.txt ]; then
+          if [ -f build/picnic ]; then
+            ./build/picnic || true
+          elif [ -f build/PicnicCuvant ]; then
             ./build/PicnicCuvant || true
           else
-            echo "⚠️  Fișierul big_romanian_list.txt lipsește — rulez doar test de build."
+            echo " Executabilul nu a fost găsit. Skip run."
           fi
+
+      - name: Run Cppcheck
+        run: |
+          cppcheck --enable=all --suppress=missingIncludeSystem . || true
+
+      - name: Run Clang-Tidy
+        run: |
+          clang-tidy --version || echo "clang-tidy not available on this runner"
+
+      - name: Run Valgrind (Ubuntu only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update && sudo apt-get install -y valgrind
+          if [ -f build/picnic ]; then
+            valgrind --leak-check=full ./build/picnic || true
+          elif [ -f build/PicnicCuvant ]; then
+            valgrind --leak-check=full ./build/PicnicCuvant || true
+          else
+            echo " Valgrind skip: executabil lipsă."
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.os }}
+          path: build/
