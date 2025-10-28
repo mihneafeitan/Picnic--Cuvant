@@ -1,6 +1,6 @@
 # Picnic Cuvant
 
-### Joc de simplu de gandire, in care utilizatorul trebuie sa formeze cuvinte in limba romana, folosind literele disponibile la fiecare nivel.
+### Joc simplu de gandire, in care utilizatorul trebuie sa formeze cuvinte in limba romana, folosind literele disponibile la fiecare nivel.
 
 | Laborant  | Link template                                |
 |-----------|----------------------------------------------|
