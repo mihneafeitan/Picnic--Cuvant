@@ -1,26 +1,43 @@
-name: CI
+name: C++ CI
 
 on:
   push:
-    tags: [ 'v*' ]
     branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup CMake
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install CMake
         uses: lukka/get-cmake@v4
-      - name: Configure
-        run: cmake -S . -B build
-      - name: Build
-        run: cmake --build build -- -j2
-      - name: Run (no network)
+
+      - name: Configure project
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build project
+        run: cmake --build build --config Release -- -j2
+
+      - name: Verify executable
+        run: |
+          echo "Listing build directory:"
+          ls build
+          if [ -f build/PicnicCuvant ]; then
+            echo "✅ Executabil găsit: PicnicCuvant"
+          else
+            echo "❌ Eroare: executabilul PicnicCuvant lipsește!"
+            exit 1
+          fi
+
+      - name: Run (safe test)
         run: |
           if [ -f big_romanian_list.txt ]; then
-            ./build/picnic || true
+            ./build/PicnicCuvant || true
           else
-            echo "big_romanian_list.txt missing - skipping run"
+            echo "⚠️  Fișierul big_romanian_list.txt lipsește — rulez doar test de build."
           fi
