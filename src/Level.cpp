@@ -1,63 +1,41 @@
 #include "Level.h"
 #include <algorithm>
-#include <iostream>
+#include <cctype>
 
-static std::string toLowerStr(const std::string &s) {
-    std::string r; r.reserve(s.size());
-    for (unsigned char c : s) r.push_back(static_cast<char>(std::tolower(c)));
-    return r;
-}
+// 🔹 Constructor implicit
+Level::Level() : number_(0) {}
 
-std::vector<char> Level::toLowerLetters(const std::string &s) {
-    std::vector<char> v;
-    for (unsigned char c : s) v.push_back(static_cast<char>(std::tolower(c)));
-    return v;
-}
+// 🔹 Constructor cu parametri
+Level::Level(int number, const std::vector<char> &letters, const std::vector<std::string> &targetWords)
+    : number_(number), letters_(letters), targetWords_(targetWords), found_(targetWords.size(), false) {}
 
-Level::Level(int id, const std::vector<char>& letters, const std::vector<std::string>& targets)
-    : id_(id), letters_(letters), targets_(targets), found_(targets.size(), false) {
-}
+// 🔹 Constructor de copiere
+Level::Level(const Level &other) = default;
 
-Level::Level(const Level &other)
-    : id_(other.id_), letters_(other.letters_), targets_(other.targets_), found_(other.found_) {
-    // copy ctor explicit
-}
+// 🔹 Operator= de copiere
+Level &Level::operator=(const Level &other) = default;
 
-Level& Level::operator=(const Level &other) {
-    if (this != &other) {
-        id_ = other.id_;
-        letters_ = other.letters_;
-        targets_ = other.targets_;
-        found_ = other.found_;
-    }
-    return *this;
-}
+// 🔹 Constructor de mutare
+Level::Level(Level &&other) noexcept = default;
 
-Level::~Level() {
-    // nimic special
-}
+// 🔹 Operator= de mutare
+Level &Level::operator=(Level &&other) noexcept = default;
 
-void Level::display() const {
-    std::cout << "Nivelul " << id_ << ":\nLitere disponibile: ";
-    for (size_t i = 0; i < letters_.size(); ++i) {
-        std::cout << static_cast<char>(std::toupper(letters_[i]));
-        if (i+1 < letters_.size()) std::cout << ", ";
-    }
-    std::cout << "\nCuvinte:\n";
-    for (size_t i = 0; i < targets_.size(); ++i) {
-        std::cout << i+1 << ". ";
-        if (found_[i]) std::cout << static_cast<std::string>(targets_[i]) << "\n";
-        else {
-            for (size_t k=0;k<targets_[i].size();++k) std::cout << "*";
-            std::cout << "\n";
-        }
-    }
-}
+// 🔹 Destructor
+Level::~Level() = default;
 
-bool Level::tryGuess(const std::string &guess) {
-    std::string g = toLowerStr(guess);
-    for (size_t i = 0; i < targets_.size(); ++i) {
-        if (!found_[i] && targets_[i] == g) {
+// 🔹 Încearcă să potrivească un cuvânt
+bool Level::tryWord(const std::string &word) {
+    std::string lower = word;
+    std::transform(lower.begin(), lower.end(), lower.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+
+    for (size_t i = 0; i < targetWords_.size(); ++i) {
+        std::string t = targetWords_[i];
+        std::transform(t.begin(), t.end(), t.begin(),
+                       [](unsigned char c) { return std::tolower(c); });
+
+        if (!found_[i] && t == lower) {
             found_[i] = true;
             return true;
         }
@@ -65,14 +43,31 @@ bool Level::tryGuess(const std::string &guess) {
     return false;
 }
 
+// 🔹 Verifică dacă toate cuvintele au fost găsite
 bool Level::isComplete() const {
-    for (bool f : found_) if (!f) return false;
-    return true;
+    return std::all_of(found_.begin(), found_.end(), [](bool f) { return f; });
 }
 
-std::ostream& operator<<(std::ostream& os, const Level& lvl) {
-    os << "Level[id=" << lvl.id_ << ", letters=";
-    for (char c : lvl.letters_) os << static_cast<char>(std::toupper(c));
-    os << ", targets=" << lvl.targets_.size() << "]";
+// 🔹 Afișează nivelul curent
+void Level::display() const {
+    std::cout << "\nNivelul " << number_ << ":\n";
+    std::cout << "Litere disponibile: ";
+    for (char c : letters_) std::cout << (char)std::toupper(c) << " ";
+    std::cout << "\nCuvinte:\n";
+
+    for (size_t i = 0; i < targetWords_.size(); ++i) {
+        if (found_[i])
+            std::cout << i + 1 << ". " << targetWords_[i] << "\n";
+        else
+            std::cout << i + 1 << ". " << std::string(targetWords_[i].size(), '*') << "\n";
+    }
+    if (isComplete())
+        std::cout << "Felicitari, ai completat nivelul " << number_ << "!\n";
+}
+
+// 🔹 Operator << pentru afișare simplificată
+std::ostream &operator<<(std::ostream &os, const Level &lvl) {
+    os << "Nivel " << lvl.number_ << " cu " << lvl.letters_.size() << " litere și "
+       << lvl.targetWords_.size() << " cuvinte.";
     return os;
 }

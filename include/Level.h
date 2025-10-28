@@ -1,41 +1,32 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <ostream>
+#include <iostream>
 
 class Level {
 private:
-    int id_;
-    std::vector<char> letters_;             // litere disponibile
-    std::vector<std::string> targets_;      // cuvintele care trebuie găsite (lowercase)
-    std::vector<bool> found_;               // ce este găsit
-
-    // helper privat
-    static std::vector<char> toLowerLetters(const std::string &s);
+    int number_;                             // numărul nivelului
+    std::vector<char> letters_;              // literele disponibile
+    std::vector<std::string> targetWords_;   // cuvintele corecte din acest nivel
+    std::vector<bool> found_;                // ce cuvinte au fost deja găsite
 
 public:
-    // constructor de inițializare
-    Level(int id, const std::vector<char>& letters, const std::vector<std::string>& targets);
+    // 🔹 Constructori
+    Level(int number, const std::vector<char> &letters, const std::vector<std::string> &targetWords);
+    Level();
 
-    // copy semantics + destructor (cerință explicită)
+    // 🔹 Rule of Five (cerință POO)
     Level(const Level &other);
-    Level& operator=(const Level &other);
+    Level &operator=(const Level &other);
+    Level(Level &&other) noexcept;
+    Level &operator=(Level &&other) noexcept;
     ~Level();
 
-    // funcționalități publice netriviale:
-    // afișează starea curentă (cu ** pentru negăsite)
-    void display() const;
+    // 🔹 Funcții utile
+    bool tryWord(const std::string &word); // încearcă un cuvânt
+    bool isComplete() const;                // toate cuvintele au fost găsite?
+    void display() const;                   // afișează starea nivelului
 
-    // încearcă un guess: returnează true dacă s-a găsit și false altfel
-    bool tryGuess(const std::string &guess);
-
-    // verifică dacă nivelul e complet
-    bool isComplete() const;
-
-    // getters
-    int id() const { return id_; }
-    const std::vector<char>& letters() const { return letters_; }
-    const std::vector<std::string>& targets() const { return targets_; }
-
-    friend std::ostream& operator<<(std::ostream& os, const Level& lvl);
+    // 🔹 Operator <<
+    friend std::ostream &operator<<(std::ostream &os, const Level &lvl);
 };

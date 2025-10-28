@@ -3,88 +3,95 @@
 #include <algorithm>
 #include <cctype>
 #include <sstream>
+#include <unordered_map>
 
-std::string WordList::toLower(const std::string &s) {
-    std::string r; r.reserve(s.size());
-    for (char c : s) r.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
-    return r;
-}
+// 🔹 Constructor implicit
+WordList::WordList() = default;
 
+// 🔹 Constructor cu fișier
 WordList::WordList(const std::string &filename) {
     loadFromFile(filename);
 }
 
-WordList::WordList(WordList&& other) noexcept
-    : words_(std::move(other.words_)), wordSet_(std::move(other.wordSet_)) {
-    // other left in valid, empty state
+// 🔹 Constructor de copiere
+WordList::WordList(const WordList &other) = default;
+
+// 🔹 Operator= de copiere
+WordList &WordList::operator=(const WordList &other) = default;
+
+// 🔹 Constructor de mutare
+WordList::WordList(WordList &&other) noexcept = default;
+
+// 🔹 Operator= de mutare
+WordList &WordList::operator=(WordList &&other) noexcept = default;
+
+// 🔹 Destructor
+WordList::~WordList() = default;
+
+// 🔹 Conversie la litere mici
+std::string WordList::toLower(const std::string &s) {
+    std::string r;
+    r.reserve(s.size());
+    for (char c : s)
+        r.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+    return r;
 }
 
-WordList& WordList::operator=(WordList&& other) noexcept {
-    if (this != &other) {
-        words_ = std::move(other.words_);
-        wordSet_ = std::move(other.wordSet_);
-    }
-    return *this;
-}
-
-WordList::~WordList() {
-    // nimic special - folosim RAII
-}
-
+// 🔹 Încarcă cuvinte din fișier
 bool WordList::loadFromFile(const std::string &filename) {
-    std::ifstream in(filename);
-    if (!in) return false;
+    std::ifstream fin(filename);
+    if (!fin.is_open())
+        return false;
+
     words_.clear();
-    wordSet_.clear();
-    std::string line;
-    while (std::getline(in, line)) {
-        std::string w;
-        // curățare spații, transformare la lowercase
-        std::istringstream iss(line);
-        if (!(iss >> w)) continue;
-        std::string lw = toLower(w);
-        // acceptăm doar cuvinte alfabetice (litere române) sau `-`
+    std::string word;
+    while (fin >> word) {
+        words_.push_back(toLower(word));
+    }
+    return true;
+}
+
+// 🔹 Adaugă cuvânt în listă
+void WordList::addWord(const std::string &word) {
+    words_.push_back(toLower(word));
+}
+
+// 🔹 Verifică dacă un cuvânt există în listă
+bool WordList::contains(const std::string &word) const {
+    std::string w = toLower(word);
+    return std::find(words_.begin(), words_.end(), w) != words_.end();
+}
+
+// 🔹 Returnează cuvinte care se pot forma din anumite litere
+std::vector<std::string> WordList::getWordsWithLetters(const std::vector<char> &letters, int maxWords) const {
+    std::vector<std::string> results;
+
+    for (const auto &word : words_) {
+        if (results.size() >= static_cast<size_t>(maxWords))
+            break;
+
+        std::unordered_map<char, int> available;
+        for (char c : letters)
+            available[std::tolower(static_cast<unsigned char>(c))]++;
+
         bool ok = true;
-        for (char c : lw) {
-            if (!( (c >= 'a' && c <= 'z') || (unsigned char)c >= 0xC0 || c=='-' )) {
-                // permite caractere UTF-8 românești (simple check: bytes >= 0xC0) — tolerant
-                // nota: pentru robustitate ar trebui un parser UTF-8; ținem verifier lax
+        for (char c : word) {
+            char lc = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            if (available[lc]-- <= 0) {
+                ok = false;
+                break;
             }
         }
-        words_.push_back(lw);
-        wordSet_.insert(lw);
+        if (ok)
+            results.push_back(word);
     }
-    return true;
+    return results;
 }
 
-bool WordList::exists(const std::string &word) const {
-    return wordSet_.find(toLower(word)) != wordSet_.end();
-}
-
-static bool canFormWord(const std::string &word, const std::vector<char> &letters) {
-    // numărăm literele din letters (lowercase ASCII / UTF-8 not fully supported)
-    std::unordered_map<char,int> cnt;
-    for (char c : letters) {
-        cnt[static_cast<char>(std::tolower(static_cast<unsigned char>(c)))]++;
-    }
-    for (char wc : word) {
-        char lc = static_cast<char>(std::tolower(static_cast<unsigned char>(wc)));
-        if (cnt[lc]-- <= 0) return false;
-    }
-    return true;
-}
-
-std::vector<std::string> WordList::filterByLetters(const std::vector<char> &letters, size_t minLen) const {
-    std::vector<std::string> out;
-    for (const auto &w : words_) {
-        if (w.size() < minLen) continue;
-        bool ok = canFormWord(w, letters);
-        if (ok) out.push_back(w);
-    }
-    return out;
-}
-
-std::ostream& operator<<(std::ostream& os, const WordList& wl) {
-    os << "WordList: " << wl.words_.size() << " words\n";
+// 🔹 Operator << pentru afișare
+std::ostream &operator<<(std::ostream &os, const WordList &wl) {
+    os << "WordList (" << wl.words_.size() << " cuvinte):\n";
+    for (const auto &w : wl.words_)
+        os << " - " << w << '\n';
     return os;
 }
