@@ -1,5 +1,8 @@
-# Ensure source code files are treated as text and normalized (LF)
-*.cpp text eol=lf
-*.h   text eol=lf
-CMakeLists.txt text eol=lf
-*.txt text eol=lf
+*.cpp linguist-language=C++
+*.h linguist-language=C++
+*.cmake linguist-detectable=false
+CMakeLists.txt linguist-detectable=false
+.github/** linguist-detectable=false
+*.yml linguist-detectable=false
+build/** linguist-detectable=false
+*.txt linguist-detectable=false
