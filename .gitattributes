@@ -1,8 +1,18 @@
 *.cpp linguist-language=C++
 *.h linguist-language=C++
-*.cmake linguist-detectable=false
-CMakeLists.txt linguist-detectable=false
+
+# Detect CMake normally (do not hide)
+CMakeLists.txt linguist-language=CMake
+*.cmake linguist-language=CMake
+
+# Exclude non-code folders and files
 .github/** linguist-detectable=false
-*.yml linguist-detectable=false
 build/** linguist-detectable=false
+data/** linguist-detectable=false
+*.yml linguist-detectable=false
 *.txt linguist-detectable=false
+*.md linguist-detectable=false
+*.json linguist-detectable=false
+
+# Optional: treat test code as C++
+tests/** linguist-language=C++
