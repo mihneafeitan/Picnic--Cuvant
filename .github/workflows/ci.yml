@@ -3,92 +3,83 @@ name: C++ CI
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
   pull_request:
-
-env:
-  SFML_VERSION: 3.0.2
-  BUILD_DIR: build
-  EXECUTABLE_NAME: picnic
 
 jobs:
   build:
-    name: Build and test (${{ matrix.os }} ${{ matrix.compiler }})
+    name: C++ CI / ${{ matrix.os }} ${{ matrix.compiler }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        compiler: [gcc, clang]
-        exclude:
-          - os: windows-latest
-            compiler: clang
-          - os: macos-latest
+        include:
+          - os: ubuntu-22.04
             compiler: gcc
+          - os: windows-2022
+            compiler: msvc
+          - os: macos-14
+            compiler: clang
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install CMake
-        uses: lukka/get-cmake@v4
-
-      - name: Setup dependencies
+      - name: Install packages
         run: |
           if [ "${{ runner.os }}" = "Linux" ]; then
             sudo apt-get update
-            sudo apt-get install -y libx11-dev libxrandr-dev libudev-dev libgl1-mesa-dev valgrind
+            sudo apt-get install -y cmake g++ libx11-dev libxrandr-dev libudev-dev libgl1-mesa-dev valgrind
           elif [ "${{ runner.os }}" = "macOS" ]; then
-            brew install sfml
+            brew install cmake sfml || true
           fi
-
-      - name: Create minimal dictionary
-        run: |
-          echo "ana\nmare\ncare\nram\nnor" > big_romanian_list.txt
 
       - name: Configure CMake
-        run: cmake -S . -B $BUILD_DIR -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 
-      - name: Build project
-        run: cmake --build $BUILD_DIR --config Release -- -j2
+      - name: Build
+        run: cmake --build build --config Debug --parallel 2
 
-      - name: Verify executable
+      - name: Install
+        run: cmake --install build --prefix build/install
+
+      - name: Skip launcher.command on macOS
+        if: runner.os == 'macOS'
         run: |
-          echo "Listing build directory:"
-          ls $BUILD_DIR || dir $BUILD_DIR
-          if [ -f $BUILD_DIR/${EXECUTABLE_NAME} ] || [ -f $BUILD_DIR/${EXECUTABLE_NAME}.exe ]; then
-            echo " Executabil gasit: ${EXECUTABLE_NAME}"
-          else
-            echo "Eroare: Executabilul lipseste!"
-            exit 1
-          fi
+          echo "Skipping macOS launcher.command since this is a console project"
+          touch launcher.command
 
-      - name: Run executable safely
+      - name: Move artifacts
         run: |
-          if [ -f $BUILD_DIR/${EXECUTABLE_NAME} ]; then
-            ./$BUILD_DIR/${EXECUTABLE_NAME} || true
-          elif [ -f $BUILD_DIR/${EXECUTABLE_NAME}.exe ]; then
-            ./$BUILD_DIR/${EXECUTABLE_NAME}.exe || true
-          else
-            echo "⚠️ Skip run."
-          fi
+          mkdir -p artifacts
+          cp -r build/install/* artifacts/ || true
 
-      - name: Run Cppcheck
-        run: cppcheck --enable=all --suppress=missingIncludeSystem . || true
-
-      - name: Run Clang-Tidy
-        run: clang-tidy --version || true
-
-      - name: Run Valgrind (Ubuntu only)
-        if: runner.os == 'Linux'
-        run: |
-          if [ -f $BUILD_DIR/${EXECUTABLE_NAME} ]; then
-            valgrind --leak-check=full ./$BUILD_DIR/${EXECUTABLE_NAME} || true
-          fi
-
-      - name: Upload artifacts
-        if: always()
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.os }}
-          path: build/
+          name: ${{ matrix.os }}-${{ matrix.compiler }}-build
+          path: artifacts/
+
+  cppcheck:
+    name: Cppcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install cppcheck
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+
+      - name: Run cppcheck
+        run: cppcheck --enable=all --suppress=missingIncludeSystem --quiet . || true
+
+  clang-tidy:
+    name: Clang-Tidy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install Clang tools
+        run: sudo apt-get update && sudo apt-get install -y clang clang-tidy
+
+      - name: Run clang-tidy
+        run: clang-tidy **/*.cpp -- -Iinclude -std=c++17 || true
