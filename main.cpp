@@ -1,37 +1,39 @@
-#include "include/Game.h"
 #include <iostream>
 #include <string>
+#include "Game.h"
 
 int main() {
-    Game game("big_romanian_list.txt");
-    game.buildLevels(10); // poți schimba în 50 dacă vrei toate nivelurile
+    std::cout << "=== PICNIC CUVANT ===" << std::endl;
 
-    std::cout << "Bun venit la jocul Picnic Cuvant!\n";
+    Game game;
 
-    std::string input;
-    bool running = true;
+    std::string playerName;
+    std::cout << "Introdu numele jucatorului: ";
+    std::getline(std::cin, playerName);
 
-    while (running) {
-        game.displayCurrentLevel();
+    // Încercăm să încărcăm progresul jucătorului
+    std::string savedName;
+    int savedLevel = 0, savedScore = 0;
 
-        std::cout << "Introduceti un cuvant: ";
-        std::cin >> input;
-
-        game.processGuess(input);
-
-        // 🔹 verificăm dacă nivelul curent este complet
-        if (game.getCurrentLevel().isComplete()) {
-            // afișăm felicitare și trecem la următorul nivel
-            std::cout << "\nFelicitari, ai completat nivelul!\n";
-
-            if (!game.advanceLevel()) {
-                // nu mai sunt niveluri
-                running = false;
-                std::cout << "Ai terminat toate nivelurile!\n";
-            }
-        }
+    if (game.loadProgress(savedName, savedLevel, savedScore) && savedName == playerName) {
+        std::cout << "Progres gasit pentru " << playerName
+                  << ": nivel " << savedLevel
+                  << ", scor " << savedScore << ".\n";
+    } else {
+        std::cout << "Nu exista progres salvat pentru " << playerName
+                  << ". Se incepe un joc nou.\n";
+        savedLevel = 1;
+        savedScore = 0;
     }
 
-    std::cout << "\nFelicitari! Ai terminat jocul!\n";
+    // Pornește jocul de la nivelul salvat
+    std::cout << "Pornind nivelul " << savedLevel << "...\n";
+    game.startLevel(savedLevel);
+
+    // Când jocul se încheie, salvăm progresul
+    std::cout << "\nSalvam progresul...\n";
+    game.saveProgress(playerName, savedLevel, savedScore);
+
+    std::cout << "Progres salvat cu succes. La revedere, " << playerName << "!\n";
     return 0;
 }

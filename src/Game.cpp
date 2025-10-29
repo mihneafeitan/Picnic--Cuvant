@@ -162,3 +162,39 @@ std::ostream &operator<<(std::ostream &os, const Game &g) {
 Level &Game::getCurrentLevel() {
     return levels_[currentLevelIndex_];
 }
+void Game::saveProgress(const std::string& playerName, int level, int score) {
+    std::ofstream saveFile("save.txt");
+    if (!saveFile.is_open()) {
+        std::cerr << "[SaveSystem] Failed to open save.txt for writing." << std::endl;
+        return;
+    }
+
+    saveFile << "PlayerName " << playerName << "\n";
+    saveFile << "Level " << level << "\n";
+    saveFile << "Score " << score << "\n";
+
+    saveFile.close();
+    std::cout << "[SaveSystem] Progress saved successfully.\n";
+}
+
+bool Game::loadProgress(std::string& playerName, int& level, int& score) {
+    std::ifstream saveFile("save.txt");
+    if (!saveFile.is_open()) {
+        std::cerr << "[SaveSystem] No save file found." << std::endl;
+        return false;
+    }
+
+    std::string label;
+    while (saveFile >> label) {
+        if (label == "PlayerName")
+            saveFile >> playerName;
+        else if (label == "Level")
+            saveFile >> level;
+        else if (label == "Score")
+            saveFile >> score;
+    }
+
+    saveFile.close();
+    std::cout << "[SaveSystem] Progress loaded successfully.\n";
+    return true;
+}
