@@ -1,18 +1,18 @@
+# Forteaza fisierele C++ sa fie C++
 *.cpp linguist-language=C++
 *.h linguist-language=C++
+*.hpp linguist-language=C++
 
-# Detect CMake normally (do not hide)
+# Pastreaza CMake in statistici
 CMakeLists.txt linguist-language=CMake
 *.cmake linguist-language=CMake
 
-# Exclude non-code folders and files
+# Ignora tot ce nu este codul tau sursa
 .github/** linguist-detectable=false
 build/** linguist-detectable=false
-data/** linguist-detectable=false
-*.yml linguist-detectable=false
+scripts/** linguist-detectable=false
 *.txt linguist-detectable=false
 *.md linguist-detectable=false
 *.json linguist-detectable=false
-
-# Optional: treat test code as C++
-tests/** linguist-language=C++
+.gitignore linguist-detectable=false
+.gitattributes linguist-detectable=false
