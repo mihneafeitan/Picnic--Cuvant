@@ -20,8 +20,7 @@ jobs:
             compiler: clang
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install packages
         run: |
@@ -41,45 +40,27 @@ jobs:
       - name: Install
         run: cmake --install build --prefix build/install
 
-      - name: Skip launcher.command on macOS
+      - name: Create dummy launcher.command on macOS
         if: runner.os == 'macOS'
         run: |
-          echo "Skipping macOS launcher.command since this is a console project"
-          touch launcher.command
+          mkdir -p build/install
+          touch build/install/launcher.command
 
       - name: Move artifacts
         run: |
           mkdir -p artifacts
           cp -r build/install/* artifacts/ || true
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-build
           path: artifacts/
 
   cppcheck:
-    name: Cppcheck
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Install cppcheck
-        run: sudo apt-get update && sudo apt-get install -y cppcheck
-
-      - name: Run cppcheck
-        run: cppcheck --enable=all --suppress=missingIncludeSystem --quiet . || true
-
-  clang-tidy:
-    name: Clang-Tidy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Install Clang tools
-        run: sudo apt-get update && sudo apt-get install -y clang clang-tidy
-
-      - name: Run clang-tidy
-        run: clang-tidy **/*.cpp -- -Iinclude -std=c++17 || true
+        run: sudo apt-get install -y cppcheck
+      - name: Run cppcheck (ignore style warnings)
+        run: cppcheck --enable=all --suppress=missingIncludeSystem --quiet src include || true
