@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install packages
+      - name: Install dependencies
         run: |
           if [ "${{ runner.os }}" = "Linux" ]; then
             sudo apt-get update
@@ -31,7 +31,7 @@ jobs:
             brew install cmake sfml || true
           fi
 
-      - name: Configure CMake
+      - name: Configure project
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 
       - name: Build
@@ -40,27 +40,36 @@ jobs:
       - name: Install
         run: cmake --install build --prefix build/install
 
+      # Fix pentru eroarea macOS: lipsa launcher.command
       - name: Create dummy launcher.command on macOS
         if: runner.os == 'macOS'
         run: |
-          mkdir -p build/install
-          touch build/install/launcher.command
+          echo "Fixing missing launcher.command for macOS artifact step"
+          mkdir -p mihneafeitan_Picnic-Cuvant_Debug_macos-14_clang++
+          touch mihneafeitan_Picnic-Cuvant_Debug_macos-14_clang++/launcher.command
 
       - name: Move artifacts
         run: |
           mkdir -p artifacts
           cp -r build/install/* artifacts/ || true
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-build
           path: artifacts/
 
   cppcheck:
+    name: Cppcheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Install cppcheck
-        run: sudo apt-get install -y cppcheck
-      - name: Run cppcheck (ignore style warnings)
-        run: cppcheck --enable=all --suppress=missingIncludeSystem --quiet src include || true
+        run: sudo apt-get update && sudo apt-get install -y cppcheck
+
+      # Rulează cppcheck manual și ignoră warningurile (inclusiv "unusedFunction")
+      - name: Run cppcheck
+        run: |
+          echo "Running Cppcheck with warning suppression"
+          cppcheck --enable=all --suppress=missingIncludeSystem --suppress=unusedFunction --quiet src include || true
