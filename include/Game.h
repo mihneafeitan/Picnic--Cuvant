@@ -1,33 +1,31 @@
 #pragma once
-#include "WordList.h"
-#include "Level.h"
-#include <vector>
 #include <string>
-#include <iostream>
+#include <vector>
+#include "Level.h"
+#include "WordList.h"
 
 class Game {
-private:
-    WordList wordList_;
-    std::vector<Level> levels_;
-    int currentLevelIndex_;
-
 public:
     Game();
-    explicit Game(const std::string &filename);
 
-    Game(const Game &other);
-    Game &operator=(const Game &other);
+    // Inițializare și pornire joc
+    void start();
+    void startLevel(int level);
 
-    Game(Game &&other) noexcept;
-    Game &operator=(Game &&other) noexcept;
+    // Funcționalități legate de joc
+    void update();
+    void render();
 
-    ~Game();
+    // Sistem de salvare / încărcare progres
+    bool saveProgress(const std::string& playerName, int level, int score);
+    bool loadProgress(std::string& playerName, int& level, int& score);
 
-    void buildLevels(int numberOfLevels);
-    void displayCurrentLevel() const;
-    int processGuess(const std::string &guess);
-    bool advanceLevel(); //  modificat să returneze bool
-    Level &getCurrentLevel();
+private:
+    int currentLevel;
+    int score;
+    WordList wordList;
+    std::vector<Level> levels;
 
-    friend std::ostream &operator<<(std::ostream &os, const Game &g);
+    void showIntro();
+    void showGameOver();
 };
