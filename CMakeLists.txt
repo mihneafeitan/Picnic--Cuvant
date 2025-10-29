@@ -63,7 +63,13 @@ endif()
 add_executable(${MAIN_EXECUTABLE_NAME}
 add_executable(PicnicCuvant
     main.cpp
+    src/Game.cpp
+    src/Level.cpp
+    src/WordList.cpp
 )
+
+set_target_properties(PicnicCuvant PROPERTIES OUTPUT_NAME "picnic")
+
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
 # NOTE: RUN_SANITIZERS is optional, if it's not present it will default to true
@@ -102,4 +108,3 @@ copy_files(FILES tastatura.txt COPY_TO_DESTINATION TARGET_NAME ${MAIN_EXECUTABLE
     src/Level.cpp
     src/WordList.cpp
 )
-set_target_properties(PicnicCuvant PROPERTIES OUTPUT_NAME "picnic")
