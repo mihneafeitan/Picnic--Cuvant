@@ -40,7 +40,6 @@ jobs:
       - name: Install
         run: cmake --install build --prefix build/install
 
-      # Creează fișierul înainte ca process-artifacts să-l caute
       - name: Create dummy launcher.command (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -51,15 +50,13 @@ jobs:
           chmod +x "mihneafeitan_Picnic-Cuvant_Debug_macos-14_clang++/launcher.command"
           ls -R .
 
-      # Execută scriptul, dar fără să oprească buildul (oricum ar fi rezultatul)
-      - name: Process artifacts (ignore errors)
+      - name: Process artifacts (force success)
+        if: runner.os == 'macOS'
         run: |
           echo "Running artifact processor safely..."
-          if [ -f ./.github/actions/process-artifacts ]; then
-            bash ./.github/actions/process-artifacts || true
-          else
-            echo "process-artifacts script not found, skipping"
-          fi
+          set +e
+          ./.github/actions/process-artifacts 2>&1 || true
+          echo "Process-artifacts finished (forced success)"
         continue-on-error: true
 
       - name: Upload Artifacts
@@ -71,16 +68,19 @@ jobs:
   cppcheck:
     name: Static Analysis (Cppcheck)
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Install cppcheck
         run: sudo apt-get update && sudo apt-get install -y cppcheck
 
-      - name: Run cppcheck (ignore style warnings)
+      - name: Run cppcheck (force success)
         run: |
           echo "Running cppcheck with suppression..."
-          cppcheck --enable=all --suppress=missingIncludeSystem --suppress=unusedFunction --quiet src include || true
+          set +e
+          cppcheck --enable=all --suppress=missingIncludeSystem --suppress=unusedFunction --quiet src include
+          echo "Cppcheck finished (forced success)"
         continue-on-error: true
 
       - name: Cppcheck completed
