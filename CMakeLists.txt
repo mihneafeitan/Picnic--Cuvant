@@ -1,12 +1,16 @@
 cmake_minimum_required(VERSION 3.16)
 project(PicnicCuvant VERSION 1.0 LANGUAGES CXX)
 
-# Standard modern C++
+# ---------------------------------------------------------------
+# C++ standard
+# ---------------------------------------------------------------
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# ---------------------------------------------------------------
 # Include directories
+# ---------------------------------------------------------------
 include_directories(include)
 
 # ---------------------------------------------------------------
@@ -44,13 +48,18 @@ set(SOURCES
 # ---------------------------------------------------------------
 add_executable(PicnicCuvant ${SOURCES})
 
-# Set output name
+# ---------------------------------------------------------------
+# Output name and linking
+# ---------------------------------------------------------------
 set_target_properties(PicnicCuvant PROPERTIES OUTPUT_NAME "picnic")
 
-# ---------------------------------------------------------------
-# Linking
-# ---------------------------------------------------------------
-target_link_libraries(PicnicCuvant PRIVATE SFML::Graphics SFML::Window SFML::System Threads::Threads)
+target_link_libraries(PicnicCuvant
+    PRIVATE
+    SFML::Graphics
+    SFML::Window
+    SFML::System
+    Threads::Threads
+)
 
 if(APPLE)
 elseif(UNIX)
@@ -58,12 +67,11 @@ elseif(UNIX)
 endif()
 
 # ---------------------------------------------------------------
-# Install and extra files
+# Install and copy extra files
 # ---------------------------------------------------------------
 set(DESTINATION_DIR bin)
 install(TARGETS PicnicCuvant DESTINATION ${DESTINATION_DIR})
 
-# Copy extra files (like tastatura.txt)
 if(EXISTS "${CMAKE_SOURCE_DIR}/tastatura.txt")
     file(COPY "${CMAKE_SOURCE_DIR}/tastatura.txt" DESTINATION "${CMAKE_BINARY_DIR}")
 endif()
